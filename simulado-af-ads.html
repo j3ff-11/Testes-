@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulado AF — ADS (4 Matérias)</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --card2: #273449; --text: #f1f5f9;
+    --muted: #94a3b8; --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b;
+    --err: #ef4444; --border: #334155;
+  }
+  * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.5; }
+  header { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 20px; position: sticky; top: 0; z-index: 20; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  .top-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  h1 { margin: 0; font-size: 1.15rem; color: var(--accent); }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.84rem; }
+  .pill { background: var(--card2); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+  .pill.ok { border-color: var(--ok); color: #86efac; }
+  .pill.warn { border-color: var(--warn); color: #fde68a; }
+  .pill.err { border-color: var(--err); color: #fca5a5; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+  select, button { background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; font-size: 0.88rem; cursor: pointer; }
+  button:hover, select:hover { border-color: var(--accent); }
+  button.primary { background: #0284c7; border-color: #0284c7; color: #fff; font-weight: 600; }
+  button.audio-btn { background: #7c3aed; border-color: #7c3aed; color: #fff; font-weight: 600; }
+  button.add-btn { background: #0f766e; border-color: #0f766e; color: #fff; font-weight: 600; }
+  button.danger { border-color: #7f1d1d; color: #fca5a5; }
+  main { padding: 18px 20px 40px; }
+  .banks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; font-size: 0.8rem; }
+  .btag { padding: 3px 10px; border-radius: 6px; background: var(--card); border: 1px solid #166534; color: #86efac; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; font-size: 0.8rem; }
+  .tag { background: var(--card2); color: var(--accent); padding: 3px 9px; border-radius: 6px; font-weight: 600; }
+  .tag.bloco { color: #e2e8f0; }
+  .tag.status-certo { background: #14532d; color: #86efac; }
+  .tag.status-chute { background: #78350f; color: #fde68a; }
+  .tag.status-erro { background: #7f1d1d; color: #fca5a5; }
+  .stem { font-size: 1.01rem; white-space: pre-line; margin-bottom: 16px; }
+  code { background: #0b1220; padding: 2px 6px; border-radius: 5px; font-family: Consolas, monospace; color: #7dd3fc; font-size: 0.92rem; }
+  .opts { display: flex; flex-direction: column; gap: 9px; }
+  .opt { display: flex; gap: 10px; align-items: flex-start; background: var(--card2); border: 2px solid transparent; border-radius: 10px; padding: 11px 14px; cursor: pointer; text-align: left; color: var(--text); font-size: 0.94rem; }
+  .opt:hover:not(.locked) { border-color: var(--accent); }
+  .opt.selected { border-color: var(--accent); background: #1e3a5f; }
+  .opt.correct { border-color: var(--ok); background: #14532d; }
+  .opt.wrong { border-color: var(--err); background: #7f1d1d; }
+  .opt-letter { font-weight: 700; color: var(--accent); min-width: 22px; }
+  .action-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  label.chute-lbl { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #fde68a; cursor: pointer; }
+  .feedback { margin-top: 16px; padding: 16px; border-radius: 10px; border-left: 4px solid var(--accent); background: #0b1220; }
+  .feedback.ok { border-left-color: var(--ok); }
+  .feedback.warn { border-left-color: var(--warn); }
+  .feedback.err { border-left-color: var(--err); }
+  .fb-title { font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
+  .exp { font-size: 0.93rem; color: #e2e8f0; margin-bottom: 12px; white-space: pre-line; }
+  .rep-box { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 10px; }
+  .rep-checks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .rep-checks label { display: flex; align-items: center; gap: 5px; font-size: 0.85rem; background: var(--card2); padding: 4px 9px; border-radius: 6px; cursor: pointer; }
+  .audio-box { margin-top: 10px; background: #1a1033; border: 1px solid #5b21b6; border-radius: 8px; padding: 12px; font-size: 0.89rem; }
+  .nav-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; }
+  .q-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 14px; }
+  .q-dot { width: 34px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--card2); color: var(--muted); font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .q-dot.active { outline: 2px solid var(--accent); color: #fff; font-weight: 700; }
+  .q-dot.certo { background: #14532d; color: #86efac; border-color: #166534; }
+  .q-dot.chute { background: #78350f; color: #fde68a; border-color: #92400e; }
+  .q-dot.erro { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+  #audioStatus { display: none; margin-top: 10px; padding: 9px 14px; border-radius: 8px; background: #2e1065; border: 1px solid #7c3aed; font-size: 0.88rem; align-items: center; justify-content: space-between; gap: 10px; }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; max-width: 680px; width: 100%; }
+  textarea { width: 100%; height: 200px; background: #0b1220; color: #e2e8f0; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: Consolas, monospace; font-size: 0.85rem; margin: 10px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top-row">
+      <h1>Simulado AF — ADS (4 Matérias + Áudio 4s)</h1>
+      <div class="stats" id="statsBar"></div>
+    </div>
+    <div class="controls">
+      <select id="selMat">
+        <option value="-1">Modo Misto (Todas as 4 Matérias)</option>
+        <option value="0">1. Arquitetura de Computadores</option>
+        <option value="1">2. Construção de Algoritmos</option>
+        <option value="2">3. Fundamentos de Ciências Exatas</option>
+        <option value="3">4. Fundamentos de Sistemas de Informação</option>
+      </select>
+      <select id="selFil">
+        <option value="ALL">Todos os Blocos</option>
+        <option value="0">Unidades 7 e 8 (Inéditas)</option>
+        <option value="1">Unidades 1 a 6 (Lacunas)</option>
+        <option value="2">Remix AC1 e AC2</option>
+        <option value="PEND">Ainda Não Respondidas</option>
+        <option value="REV">Repescagem (Só Erros e Chutes)</option>
+      </select>
+      <button id="btnMix">Embaralhar</button>
+      <button id="btnPlay" class="audio-btn">🎧 Ouvir Erros/Chutes</button>
+      <button id="btnAdd" class="add-btn">+ Carregar Lote</button>
+      <button id="btnReset" class="danger">Zerar</button>
+    </div>
+    <div id="audioStatus">
+      <span id="audioMsg"></span>
+      <button id="btnStop" class="danger">⏹ Parar</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="banks" id="banksBar"></div>
+  <div id="app"></div>
+  <div class="q-grid" id="qGrid"></div>
+</main>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 style="margin:0 0 6px;color:var(--accent);">Carregar Novo Lote de Questões</h3>
+    <div style="font-size:0.86rem;color:var(--muted);">Cole abaixo o bloco JSON do próximo lote (Lote 2, 3 ou 4) e clique em Importar. Fica salvo automaticamente no navegador.</div>
+    <textarea id="txtLote" placeholder='[{"id":"ARQ-11", ...}]'></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button onclick="fecharModal()">Cancelar</button>
+      <button class="add-btn" onclick="importarLote()">Importar Questões</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MATS = [
+  'Arquitetura de Computadores',
+  'Construção de Algoritmos',
+  'Fundamentos de Ciências Exatas',
+  'Fundamentos de Sistemas de Informação'
+];
+const BLOCOS = ['Un. 7–8 (Inédita)', 'Un. 1–6 (Lacuna)', 'Remix AC1/AC2'];
+const LETRAS = ['a', 'b', 'c', 'd', 'e'];
+
+const BASE_Q = [
+  // ================= ARQUITETURA DE COMPUTADORES (10) =================
+  {id:'ARQ-01',m:0,u:'Un. 7',b:0,
+   q:'Em sistemas multiprogramados, o escalonador decide qual processo usa a CPU. Avalie:\n\nI. No escalonamento não preemptivo, o SO pode interromper o processo em execução a qualquer momento para priorizar outra tarefa.\nII. No escalonamento preemptivo, o SO pode interromper o processo em execução, colocá-lo em estado pronto e alocar outro na CPU, sendo essencial em tempo real.\nIII. O algoritmo Shortest-Job-First (SJF) executa tarefas menores primeiro e minimiza o tempo médio de espera quando o tempo de execução é conhecido previamente.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','II, apenas.','I e III, apenas.','II e III, apenas.','I, II e III.'],a:3,
+   e:'II e III são corretas. I é FALSA: no não preemptivo, o processo só sai da CPU quando termina ou dá erro no próprio código; quem interrompe para priorizar é o preemptivo.',
+   p:'Qual a diferença entre escalonamento preemptivo e não preemptivo, e o que faz o SJF?',
+   r:'No não preemptivo o processo só sai ao terminar ou dar erro; no preemptivo o SO pode interrompê-lo para priorizar outro. O SJF executa tarefas menores primeiro e minimiza a espera média.'},
+
+  {id:'ARQ-02',m:0,u:'Un. 7',b:0,
+   q:'Sobre o escalonamento de Robin (Round-Robin) e o escalonamento no sistema operacional Unix, avalie:\n\nI. No algoritmo de Robin, um quantum muito pequeno reduz a eficiência da CPU (maior overhead), enquanto um quantum muito grande degrada a resposta de processos interativos.\nII. O escalonamento do Unix combina prioridades na vertical (modo núcleo com prioridade alta e modo usuário com baixa) e algoritmo de Robin na horizontal para processos de mesma prioridade.\nIII. No Unix, as prioridades dos processos em modo usuário são fixas e nunca são recalculadas.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','II, apenas.','I e II, apenas.','II e III, apenas.','I, II e III.'],a:2,
+   e:'I e II são verdadeiras. III é FALSA: no Unix, as prioridades em modo usuário são recalculadas periodicamente para que processos que usaram a CPU recentemente cedam lugar aos demais.',
+   p:'No escalonamento de Robin, qual o efeito de um quantum muito curto ou muito longo? E como o Unix escalona?',
+   r:'Quantum curto gera overhead; quantum longo degrada processos interativos. O Unix usa prioridades na vertical e Robin na horizontal, recalculando prioridades de usuário.'},
+
+  {id:'ARQ-03',m:0,u:'Un. 7',b:0,
+   q:'No gerenciamento de memória, avalie as afirmações sobre swapping e partições:\n\nI. Mover processos temporariamente da memória principal para o disco chama-se swap out; trazê-los de volta do disco para a memória principal chama-se swap in.\nII. Na multiprogramação com partições fixas, todo espaço não utilizado dentro de uma partição é perdido.\nIII. Nas partições variáveis, o número, a localização e o tamanho das partições variam dinamicamente, aumentando o aproveitamento da memória, mas elevando o esforço de gerenciamento.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','II e III, apenas.','I e III, apenas.','I, II e III.'],a:4,
+   e:'Todas (I, II e III) são verdadeiras! Macete: Swap OUT = sai da RAM pro disco; Swap IN = entra do disco pra RAM.',
+   p:'Qual a diferença entre swap out e swap in, e entre partições fixas e variáveis?',
+   r:'Swap out tira da RAM pro disco; swap in traz do disco pra RAM. Partições fixas desperdiçam espaço; variáveis se ajustam dinamicamente, aproveitando melhor a memória com mais gerência.'},
+
+  {id:'ARQ-04',m:0,u:'Un. 8',b:0,
+   q:'Qual característica dos sistemas distribuídos tem como objetivo esconder dos usuários e dos aplicativos a complexidade de os recursos estarem distribuídos em múltiplos nós?',
+   o:['Heterogeneidade.','Transparência.','Escalabilidade.','Tolerância a falhas.','Coordenação.'],a:1,
+   e:'Correta: B (Transparência). Heterogeneidade = diferentes SOs/hardwares; Escalabilidade = crescer sem perder desempenho; Tolerância a falhas = continuar operando se um nó cair.',
+   p:'Em sistemas distribuídos, o que significa transparência?',
+   r:'É esconder dos usuários e aplicativos a complexidade da distribuição dos recursos entre os nós.'},
+
+  {id:'ARQ-05',m:0,u:'Un. 8',b:0,
+   q:'Sobre protocolos de comunicação em sistemas distribuídos, assinale a alternativa CORRETA:',
+   o:['IP garante entrega ordenada sem perdas; TCP apenas traduz nomes de domínio.',
+      'TCP garante entrega confiável e ordenada dos pacotes; IP faz endereçamento e roteamento; HTTP GET solicita dados e POST envia dados; DNS traduz nomes em IPs; SMTP envia e-mails e FTP transfere arquivos.',
+      'SMTP transfere arquivos; FTP envia e-mails; DNS solicita páginas web.',
+      'HTTP POST serve apenas para recuperar dados sem enviar informações ao servidor.',
+      'DNS substitui o protocolo TCP/IP eliminando o uso de endereços IP.'],a:1,
+   e:'Correta: B. Guarde o mapa completo: TCP (confiabilidade/ordem), IP (endereço/roteamento), HTTP GET (pede) / POST (envia), DNS (nome->IP), SMTP (e-mail), FTP (arquivos).',
+   p:'Resuma as funções de TCP, IP, HTTP GET/POST, DNS, SMTP e FTP.',
+   r:'TCP entrega ordenado sem perdas; IP endereça e roteia; GET solicita e POST envia na web; DNS traduz nome em IP; SMTP envia e-mail; FTP transfere arquivos.'},
+
+  {id:'ARQ-06',m:0,u:'Un. 8',b:0,
+   q:'Avalie as asserções sobre consistência de dados em sistemas distribuídos:\n\nI. Sistemas financeiros críticos beneficiam-se do modelo ACID, enquanto sistemas web de alto tráfego frequentemente adotam o modelo BASE.\n\nPORQUE\n\nII. O modelo ACID garante consistência forte e transações atômicas e completas em todos os nós, enquanto o modelo BASE prioriza a disponibilidade e admite estados temporariamente diferentes até alcançar a consistência eventual.\n\nAssinale a opção correta:',
+   o:['As asserções I e II são verdadeiras, e a II é uma justificativa correta da I.',
+      'As asserções I e II são verdadeiras, mas a II não justifica a I.',
+      'A asserção I é verdadeira e a II é falsa.',
+      'A asserção I é falsa e a II é verdadeira.',
+      'As asserções I e II são falsas.'],a:0,
+   e:'Correta: A. ACID (Atomicidade, Consistência, Isolamento, Durabilidade) = consistência imediata para aplicações críticas. BASE = foco em disponibilidade e tolerância a falhas com consistência eventual.',
+   p:'Quando usar ACID e quando usar BASE em sistemas distribuídos?',
+   r:'ACID para aplicações críticas como finanças por garantir consistência forte e atomicidade; BASE para sistemas web por priorizar disponibilidade com consistência eventual.'},
+
+  {id:'ARQ-07',m:0,u:'Un. 8',b:0,
+   q:'Sobre tolerância a falhas e exemplos reais de sistemas distribuídos, avalie:\n\nI. Na replicação ativa-passiva, apenas um nó fica ativo e os demais ficam como backups.\nII. Na replicação ativa-ativa, múltiplos nós atuam simultaneamente, dividindo a carga e garantindo redundância.\nIII. Algoritmos de consenso como Paxos e Raft permitem que os nós entrem em acordo sobre o estado do sistema mesmo com falhas ou partições de rede.\nIV. O NFS (Network File System) permite que computadores acessem arquivos em servidores remotos como se estivessem localmente armazenados.\n\nEstá correto o que se afirma em:',
+   o:['I e II, apenas.','II e III, apenas.','I, III e IV, apenas.','II, III e IV, apenas.','I, II, III e IV.'],a:4,
+   e:'Todas (I, II, III e IV) são verdadeiras! Replicação (ativa-passiva / ativa-ativa) + Consenso (Paxos e Raft) + Exemplos (DNS e NFS) são o coração da Unidade 8.',
+   p:'Diferencie replicação ativa-passiva e ativa-ativa, cite 2 algoritmos de consenso e diga o que é NFS.',
+   r:'Ativa-passiva tem 1 ativo e backups; ativa-ativa tem vários ativos dividindo carga. Consenso: Paxos e Raft. NFS permite acessar arquivos remotos em rede como se fossem locais.'},
+
+  {id:'ARQ-08',m:0,u:'Un. 8',b:0,
+   q:'Sobre os modelos de serviço de computação em nuvem (IaaS, PaaS e SaaS), assinale a alternativa CORRETA:',
+   o:['No SaaS, o usuário precisa instalar o software localmente e administrar o sistema operacional do servidor.',
+      'No PaaS, o usuário compra servidores físicos e configura toda a infraestrutura de rede local.',
+      'No IaaS, o provedor entrega infraestrutura virtual (servidores, redes, armazenamento) e o usuário controla o SO e aplicações; no PaaS, o provedor entrega plataforma pronta para desenvolvedores; no SaaS, o usuário acessa o software pronto pelo navegador.',
+      'A computação em nuvem elimina totalmente a dependência de conexão com a internet e preocupações de privacidade.',
+      'No IaaS, o desenvolvedor não tem nenhum controle sobre o sistema operacional.'],a:2,
+   e:'Correta: C. IaaS = infraestrutura sob demanda com controle do SO (ex: AWS, GCP); PaaS = plataforma de desenvolvimento pronta (ex: Azure); SaaS = aplicativo pronto no navegador. Desafios: segurança/privacidade e dependência de internet.',
+   p:'Diferencie IaaS, PaaS e SaaS em uma frase cada.',
+   r:'IaaS fornece infraestrutura virtual com controle do SO; PaaS fornece plataforma pronta para programar sem gerir infraestrutura; SaaS entrega o software pronto pelo navegador.'},
+
+  {id:'ARQ-09',m:0,u:'Un. 2 (Erro AC1)',b:2,
+   q:'Sobre a dinâmica entre CPU e memória cache, avalie as asserções:\n\nI. O ganho de desempenho no uso da memória cache baseia-se em armazenar nela apenas as palavras mais requisitadas pelo processador.\n\nPORQUE\n\nII. Sendo a memória cache de elevado custo financeiro, o ideal é equilibrar pequenas quantidades de memória rápida e cara com maiores quantidades de memória mais lenta e barata.\n\nAssinale a opção correta:',
+   o:['A asserção I é falsa e a II é verdadeira.','As asserções I e II são falsas.','As asserções I e II são verdadeiras, mas a II não justifica a I.','As asserções I e II são verdadeiras, e a II é uma justificativa correta da I.','A asserção I é verdadeira e a II é falsa.'],a:3,
+   e:'Correta: D! (Reforço do seu erro na AC1 Q6). POR QUE guardamos só as palavras mais usadas na cache? PORQUE ela é muito cara e pequena, exigindo o balanço com memórias lentas e baratas. A II justifica exatamente a I!',
+   p:'Por que a memória cache guarda apenas as palavras mais usadas pelo processador?',
+   r:'Porque a cache tem alto custo financeiro e baixa capacidade, exigindo equilibrar pouca memória rápida e cara com muita memória lenta e barata.'},
+
+  {id:'ARQ-10',m:0,u:'Un. 5 (Erro AC2)',b:2,
+   q:'Sobre arquiteturas fechadas e abertas nas primeiras décadas da computação, avalie:\n\nI. Os modelos IBM 7094 e IBM 1401 eram incompatíveis entre si, forçando empresas a manter dois departamentos de computação separados.\nII. O CDC 6600 (1964) destacava-se pelo elevado grau de paralelização e tinha desempenho superior ao IBM 7094.\nIII. Nos anos 1980, a Apple adotou a arquitetura aberta, permitindo que qualquer fabricante produzisse todos os componentes de seus computadores.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','II, apenas.','I e II, apenas.','II e III, apenas.','I, II e III.'],a:2,
+   e:'I e II são verdadeiras (Reforço do seu erro na AC2 Q6!). III é FALSA: quem popularizou PCs com arquitetura aberta foi o padrão PC, enquanto a Apple optou por manter a arquitetura fechada até os dias atuais.',
+   p:'IBM 7094 e 1401 eram compatíveis? Quais os 2 destaques do CDC 6600? E a Apple usa qual arquitetura?',
+   r:'IBM 7094 e 1401 eram incompatíveis; CDC 6600 tinha alto paralelismo e superava o IBM 7094; a Apple opta pela arquitetura fechada.'},
+
+  // ================= CONSTRUÇÃO DE ALGORITMOS (10) =================
+  {id:'ALG-01',m:1,u:'Un. 7',b:0,
+   q:'Em estruturas de dados não primitivas, Pilhas e Filas seguem regras opostas de remoção de elementos. Assinale a alternativa CORRETA:',
+   o:['Na pilha, o primeiro elemento adicionado é o primeiro a ser removido; na fila, o último adicionado sai primeiro.',
+      'Na pilha, o último valor adicionado é o primeiro a ser removido; na fila, o primeiro valor adicionado é o primeiro a ser removido.',
+      'Pilhas, filas, listas e dicionários são exemplos de estruturas de dados primitivas.',
+      'Conjuntos (sets) são usados quando precisamos armazenar valores repetidos obrigatoriamente.',
+      'Estruturas primitivas são compostas por classes complexas criadas pelo usuário.'],a:1,
+   e:'Correta: B. Pilha = LIFO (último que entra é o primeiro que sai, como pilha de pratos). Fila = FIFO (primeiro que entra é o primeiro que sai, como fila de atendimento). Conjuntos guardam valores ÚNICOS (sem duplicatas).',
+   p:'Qual a diferença na ordem de remoção entre Pilha e Fila, e o que um Conjunto garante?',
+   r:'Na pilha o último a entrar é o primeiro a sair; na fila o primeiro a entrar é o primeiro a sair. Conjuntos garantem valores únicos sem duplicatas.'},
+
+  {id:'ALG-02',m:1,u:'Un. 7',b:0,
+   q:'Sobre as três estruturas de dados nativas mais comuns em Python (Lista, Tupla e Dicionário), assinale a alternativa CORRETA:',
+   o:['Listas usam colchetes [], são ordenadas, mutáveis e aceitam tipos diferentes; Tuplas usam parênteses () e são imutáveis; Dicionários usam chaves {} em pares chave:valor.',
+      'Tuplas podem ser modificadas livremente após criadas, enquanto listas são protegidas contra gravação.',
+      'O primeiro elemento de uma lista em Python sempre possui índice 1.',
+      'Dicionários são usados apenas com colchetes e não permitem recuperação por chave.',
+      'Listas em Python só aceitam elementos do mesmo tipo de dado.'],a:0,
+   e:'Correta: A! Listas `[]` = mutáveis, índice começa em `0` e aceitam tipos mistos. Tuplas `()` = imutáveis. Dicionários `{}` = `chave:valor`.',
+   p:'Diferencie Lista, Tupla e Dicionário em Python quanto a símbolos e mutabilidade.',
+   r:'Lista usa colchetes, começa no índice zero e é mutável; Tupla usa parênteses e é imutável; Dicionário usa chaves no formato chave dois pontos valor.'},
+
+  {id:'ALG-03',m:1,u:'Un. 7',b:0,
+   q:'Dada a lista `notas = [7.5, 8.0, 6.5, 9.0, 10.0]` em Python, associe os métodos/funções de lista corretamente:',
+   o:['`notas.pop()` adiciona um item ao fim da lista; `notas.append(5)` remove o último item.',
+      '`notas.clear()` ordena a lista em ordem crescente; `notas.sort()` apaga tudo.',
+      '`len(notas)` calcula a soma das notas; `sum(notas)` retorna a quantidade de itens.',
+      '`notas.append(x)` adiciona ao fim; `notas.pop()` remove e retorna o último (ou do índice informado); `len(notas)` dá o tamanho; `sum(notas)` soma os números; `notas.sort()` ordena em ordem crescente.',
+      '`notas.remove(x)` inverte a lista; `notas.reverse()` remove o primeiro elemento.'],a:3,
+   e:'Correta: D! Fique atento também a `insert(index, item)` (insere em posição específica), `remove(item)` (remove primeira ocorrência pelo valor), `count(item)` (conta ocorrências) e `index(item)` (retorna o índice).',
+   p:'O que fazem os métodos de lista append, pop, insert, remove e sort em Python?',
+   r:'append adiciona no fim; pop remove e retorna o último ou de um índice; insert insere em posição específica; remove apaga a primeira ocorrência do valor; sort ordena crescente.'},
+
+  {id:'ALG-04',m:1,u:'Un. 7',b:0,
+   q:'Sobre Matrizes (Arrays) usando o módulo `array` em Python, avalie as afirmações:\n\nI. Diferentemente das listas, matrizes do módulo `array` não são nativas, exigindo `import array` e especificação do código do tipo (como `\'i\'` para inteiros ou `\'f\'` para float).\nII. Arrays armazenam coleções ordenadas de elementos do mesmo tipo, sendo mais eficientes em espaço e tempo de execução do que listas.\nIII. Uma matriz criada com `array.array(\'i\', [1, 2, 3])` aceita misturar strings e inteiros na mesma estrutura.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','II, apenas.','I e II, apenas.','II e III, apenas.','I, II e III.'],a:2,
+   e:'I e II são verdadeiras. III é FALSA: matrizes (`array`) são restritivas e aceitam APENAS elementos do mesmo tipo definido no primeiro argumento (`\'i\'`, `\'f\'`, `\'d\'`, etc.).',
+   p:'Qual a diferença entre lista e matriz com módulo array em Python?',
+   r:'Lista é nativa e aceita tipos diferentes; matriz precisa de import array, exige especificar o tipo, só aceita elementos do mesmo tipo e é mais eficiente em desempenho e espaço.'},
+
+  {id:'ALG-05',m:1,u:'Un. 8',b:0,
+   q:'Sobre o conceito de funções e modularização de código em Python, avalie:\n\nI. Funções são blocos de código nomeados e reutilizáveis, criados com a palavra-chave `def`, com propósito único para facilitar manutenção e legibilidade.\nII. Em Python existem três tipos principais de funções: nativas/embutidas (como `print` e `input`), importadas de bibliotecas e criadas pelo desenvolvedor.\nIII. Funções podem ser com retorno (devolvem valor ao programa) ou sem retorno (executam uma ação sem devolver valor).\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','II e III, apenas.','I e III, apenas.','I, II e III.'],a:4,
+   e:'Todas (I, II e III) são verdadeiras! Regras de nome de função: começar com letra ou `_`, preferir minúsculas com `snake_case` e nunca usar palavras reservadas (`if`, `for`, `while`).',
+   p:'Para que servem funções em Python e quais são seus 3 tipos principais?',
+   r:'Servem para modularizar e reaproveitar código com propósito único usando def. Os 3 tipos são: nativas ou embutidas, importadas de bibliotecas e criadas pelo desenvolvedor.'},
+
+  {id:'ALG-06',m:1,u:'Un. 8',b:0,
+   q:'Analise o código Python abaixo:\n\n`def calcular(preco, taxa=0.1):`\n`    total = preco + (preco * taxa)`\n`    return total`\n`    print("Fim")`\n\nAvalie as afirmações:\nI. Chamar `calcular(100)` retorna `110.0`, usando o valor padrão `0.1` de `taxa`.\nII. A mensagem `"Fim"` será exibida sempre que a função for chamada.\nIII. `preco` é argumento obrigatório e `taxa` é argumento padrão (opcional).\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','II, apenas.','I e III, apenas.','II e III, apenas.','I, II e III.'],a:2,
+   e:'I e III são corretas! II é FALSA: a palavra-chave `return` interrompe imediatamente a execução da função — nada escrito depois do `return` dentro dela é executado.',
+   p:'O que acontece com comandos escritos após um return, e como funciona um argumento padrão?',
+   r:'O return encerra imediatamente a função, então nada após ele executa. Argumento padrão assume o valor pré-definido se não for passado na chamada.'},
+
+  {id:'ALG-07',m:1,u:'Un. 8',b:0,
+   q:'Em Python, quando uma função invoca a si mesma diversas vezes para resolver um problema que pode ser dividido em subproblemas menores e idênticos ao original, temos o conceito de:',
+   o:['Concatenação.','Recursividade (recursão).','Indentação.','Atribuição composta.','Fatiamento.'],a:1,
+   e:'Correta: B (Recursividade). Além da chamada normal (escrever o nome da função e passar argumentos), uma função pode chamar a si mesma — isso é recursão.',
+   p:'O que é recursividade em funções?',
+   r:'É quando uma função chama a si mesma para dividir um problema em subproblemas menores e idênticos ao original.'},
+
+  {id:'ALG-08',m:1,u:'Un. 1',b:1,
+   q:'Sobre algoritmos, suas representações e IDEs, avalie:\n\nI. A descrição narrativa é a forma mais usada na programação profissional por nunca gerar ambiguidade ou múltiplas interpretações.\nII. Fluxogramas representam algoritmos graficamente com formas geométricas específicas (ex.: losango para decisão/condicional), e pseudocódigo é uma linguagem intermediária estruturada sem rigidez de sintaxe.\nIII. Um IDE (Ambiente de Desenvolvimento Integrado, como VS Code) reúne em uma única interface ferramentas como editor de código, compilador/interpretador e depurador.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','I e III, apenas.','II e III, apenas.','I, II e III.'],a:3,
+   e:'II e III são verdadeiras. I é FALSA: a descrição narrativa (em linguagem natural) é pouco usada na prática justamente porque gera múltiplos sentidos de interpretação.',
+   p:'Quais são as 3 formas de representar um algoritmo e por que a narrativa é pouco usada?',
+   r:'Descrição narrativa, fluxograma e pseudocódigo. A narrativa é pouco usada porque pode gerar ambiguidade e múltiplas interpretações.'},
+
+  {id:'ALG-09',m:1,u:'Un. 6',b:1,
+   q:'Sobre a função `range(start, stop, step)` e os laços `for` e `while` em Python, assinale a alternativa CORRETA:',
+   o:['`list(range(1, 10, 2))` gera `[1, 3, 5, 7, 9]` e `list(range(10, 0, -1))` gera `[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]`, pois `stop` é exclusivo (não incluso).',
+      'Na função `range`, o parâmetro `stop` é incluído na sequência e `start` é obrigatório.',
+      'O laço `for` é usado quando não sabemos quantas repetições ocorrerão; o `while` é usado apenas para sequências fixas.',
+      '`range(5)` gera os números de 1 até 5.',
+      'O parâmetro `step` não pode receber números negativos em Python.'],a:0,
+   e:'Correta: A! Lembre: em `range(start, stop, step)`, `start` padrão é `0`, `step` padrão é `1`, `stop` é OBRIGATÓRIO e EXCLUSIVO (nunca entra!). `for` = nº conhecido/sequência; `while` = condição/nº desconhecido.',
+   p:'Na função range(start, stop, step), qual valor é exclusivo e o que faz um step negativo?',
+   r:'O stop é obrigatório e exclusivo, nunca entra no resultado. Step negativo gera a sequência em ordem decrescente.'},
+
+  {id:'ALG-10',m:1,u:'Un. 3 e 5 (Erro AC1/AC2)',b:2,
+   q:'Revisando operadores, strings e controle de laços em Python, avalie:\n\nI. Strings em Python são case-sensitive; logo, `"ABC123" == "abc123"` retorna `False`.\nII. Dentro de um laço, `break` interrompe e sai do laço imediatamente; `continue` pula o resto da iteração atual e vai para a próxima; `pass` é uma instrução nula que não faz nada.\nIII. A partir do Python 3.10, `match-case` pode ser usado para múltiplos casos, e o operador `//` realiza divisão inteira (enquanto `/` retorna `float`).\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','II e III, apenas.','I e III, apenas.','I, II e III.'],a:4,
+   e:'Todas (I, II e III) são verdadeiras! Cuidado também com `input()`: ele sempre retorna `str`, exigindo `int()` ou `float()` para cálculos, e `str()` para concatenar número com texto via `+`.',
+   p:'Qual a diferença entre break, continue e pass, e por que "ABC" == "abc" dá False?',
+   r:'break encerra o laço; continue pula para a próxima iteração; pass não faz nada. "ABC" == "abc" dá False porque strings em Python são case-sensitive.'},
+
+  // ================= FUNDAMENTOS DE CIÊNCIAS EXATAS (10) =================
+  {id:'EXA-01',m:2,u:'Un. 7',b:0,
+   q:'Usando apenas os algarismos `{1, 2, 3}`, quantos números de **2 algarismos** podem ser formados: (1) SEM repetição de algarismos e (2) COM repetição permitida, aplicando o Princípio Fundamental da Contagem (PFC)?',
+   o:['3 sem repetição e 6 com repetição.','6 sem repetição e 9 com repetição.','9 sem repetição e 6 com repetição.','6 sem repetição e 12 com repetição.','12 sem repetição e 18 com repetição.'],a:1,
+   e:'Correta: B! Sem repetição: 3 escolhas na 1ª etapa × 2 na 2ª = 6 números (12, 13, 21, 23, 31, 32). Com repetição: 3 × 3 = 9 números (inclui 11, 22, 33).',
+   p:'Como funciona o Princípio Fundamental da Contagem?',
+   r:'Multiplica-se a quantidade de possibilidades de cada etapa. Se não puder repetir, diminui 1 opção a cada etapa já preenchida.'},
+
+  {id:'EXA-02',m:2,u:'Un. 7',b:0,
+   q:'Quando a quantidade de elementos é igual à quantidade de posições, usamos Permutação. Avalie as afirmações:\n\nI. Para organizar 6 pessoas distintas em fila (permutação simples), existem `P6 = 6! = 720` maneiras.\nII. Para organizar 5 pessoas em círculo (permutação cíclica), a fórmula é `PCn = (n - 1)!`, resultando em `4! = 24` maneiras.\nIII. Na permutação com repetição (como anagramas da palavra TECNOLOGIA, onde a letra O repete 2 vezes), divide-se `n!` pelo fatorial das repetições (`n! / a!`).\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','II e III, apenas.','I e III, apenas.','I, II e III.'],a:4,
+   e:'Todas (I, II e III) são verdadeiras! Guarde as 3 fórmulas de permutação: Simples = n!; Repetição = n! / (a! · b!...); Cíclica = (n - 1)!.',
+   p:'Quais são as fórmulas da permutação simples, com repetição e cíclica?',
+   r:'Simples é n fatorial; com repetição divide n fatorial pelos fatoriais das repetições; cíclica é n menos 1 fatorial.'},
+
+  {id:'EXA-03',m:2,u:'Un. 7',b:0,
+   q:'De um grupo de 6 analistas, deseja-se formar um comitê de 2 pessoas. No Cenário A, o 1º será líder e o 2º será secretário (ordem importa). No Cenário B, ambos terão a mesma função (ordem não importa). Assinale a alternativa CORRETA:',
+   o:['Ambos são Combinações com 15 possibilidades.','Cenário A é Combinação (15) e Cenário B é Arranjo (30).','Cenário A é Arranjo (`A6,2 = 6·5 = 30`) e Cenário B é Combinação (`C6,2 = 30/2! = 15`).','Cenário A é Permutação (720) e Cenário B é Arranjo (30).','Ambos são Arranjos com 36 possibilidades.'],a:2,
+   e:'Correta: C! Número de elementos (6) ≠ etapas (2): se a ORDEM IMPORTA (cargos/pódio) -> ARRANJO: `6! / 4! = 6 × 5 = 30`. Se a ORDEM NÃO IMPORTA (mesma função/grupo) -> COMBINAÇÃO: `30 / 2! = 15`.',
+   p:'Como decidir entre Permutação, Arranjo e Combinação na hora da prova?',
+   r:'Se usa todos os elementos é Permutação. Se escolhe uma parte: se a ordem importa é Arranjo; se a ordem não importa é Combinação e divide por p fatorial.'},
+
+  {id:'EXA-04',m:2,u:'Un. 8',b:0,
+   q:'Sobre o conceito, a notação e os tipos de matrizes, assinale a alternativa CORRETA:',
+   o:['Uma matriz `A(m x n)` possui m linhas e n colunas (sempre linhas primeiro), cada elemento é indicado por `a_ij` (linha i, coluna j), e a matriz identidade (quadrada com 1 na diagonal principal e 0 nos demais) é o elemento neutro da multiplicação de matrizes.',
+      'Na ordem `m x n` de uma matriz, `m` representa sempre a quantidade de colunas e `n` a de linhas.',
+      'Duas matrizes são iguais mesmo tendo ordens diferentes, desde que a soma dos elementos seja igual.',
+      'A matriz identidade é o elemento neutro da adição de matrizes.',
+      'Uma matriz de 4 linhas e 3 colunas tem ordem 3 x 4.'],a:0,
+   e:'Correta: A! Regra de ouro: ordem é sempre LINHA × COLUNA (`m × n`). Na adição o elemento neutro é a matriz NULA (tudo 0); na multiplicação é a matriz IDENTIDADE (diagonal principal = 1, resto = 0).',
+   p:'Na ordem m por n de uma matriz, o que vem primeiro? E qual é o elemento neutro da multiplicação de matrizes?',
+   r:'Sempre vêm primeiro as linhas e depois as colunas. O elemento neutro da multiplicação é a matriz identidade, quadrada com 1 na diagonal principal e 0 no resto.'},
+
+  {id:'EXA-05',m:2,u:'Un. 8',b:0,
+   q:'Sobre o conceito matemático e computacional de vetores e matrizes, avalie:\n\nI. Matematicamente, um vetor é um segmento orientado definido por direção, sentido e módulo (norma), e dados dois pontos A (origem) e B (extremo), calcula-se o vetor fazendo `B - A`.\nII. Em programação, um vetor corresponde a um array unidimensional que armazena dados do mesmo tipo.\nIII. Em programação, uma matriz é uma estrutura unidimensional que não tem relação com vetores.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','II, apenas.','III, apenas.','I e II, apenas.','I, II e III.'],a:3,
+   e:'I e II são verdadeiras. III é FALSA: em programação, uma matriz é um vetor BIDIMENSIONAL (cada linha representa um vetor unidimensional) que armazena dados do mesmo tipo.',
+   p:'Quais são as 3 características de um vetor na matemática e como vetor e matriz se relacionam na programação?',
+   r:'Na matemática vetor tem direção, sentido e módulo, calculado como ponto final menos inicial. Na programação, vetor é um array unidimensional e matriz é um vetor bidimensional de mesmo tipo.'},
+
+  {id:'EXA-06',m:2,u:'Un. 8',b:0,
+   q:'Considere os vetores `u = (2, -1, 4)` e `v = (3, 5, -2)`. Sobre operações com vetores, assinale a alternativa CORRETA:',
+   o:['A soma `u + v` é `(6, -5, -8)`.',
+      'A soma `u + v` é `(5, 4, 2)` (somando coordenada a coordenada no mesmo espaço), e o produto escalar/interno entre dois vetores resulta em um número obtido pela soma dos produtos das coordenadas.',
+      'É possível somar um vetor 2D com um vetor 3D diretamente sem restrições.',
+      'A subtração `u - v` não pode ser vista como a soma de `u` com o vetor oposto de `v`.',
+      'A soma de vetores não obedece à propriedade comutativa (`u + v != v + u`).'],a:1,
+   e:'Correta: B! `u + v = (2+3, -1+5, 4+(-2)) = (5, 4, 2)`. Para somar vetores, eles precisam estar no mesmo espaço (mesma qtd de coordenadas). A soma é comutativa (Regra do Paralelogramo). E produto escalar/interno resulta em um NÚMERO (aqui: `2*3 + (-1)*5 + 4*(-2) = 6 - 5 - 8 = -7`).',
+   p:'Qual a condição para somar dois vetores e o que resulta o produto escalar ou interno?',
+   r:'Para somar, ambos precisam ter a mesma quantidade de coordenadas e soma-se posição por posição. O produto escalar resulta em um número, somando os produtos das coordenadas.'},
+
+  {id:'EXA-07',m:2,u:'Un. 8',b:0,
+   q:'Considere uma matriz `A` de ordem `2 x 3` e uma matriz `B` de ordem `3 x 4`. Sobre operações com essas matrizes, avalie:\n\nI. É possível calcular `A + B` e `A - B`, pois ambas possuem o número 3 em suas dimensões.\nII. É possível calcular a multiplicação `A · B`, pois o número de colunas da primeira matriz (3) é igual ao número de linhas da segunda matriz (3).\nIII. Na multiplicação de uma matriz por um escalar (um número), basta multiplicar cada elemento da matriz por esse número.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','II, apenas.','I e II, apenas.','II e III, apenas.','I, II e III.'],a:3,
+   e:'II e III são corretas! I é FALSA: soma e subtração de matrizes exigem EXATAMENTE a mesma ordem (`2x3` só soma com `2x3`). Já multiplicação `A·B` exige: nº colunas da 1ª = nº linhas da 2ª (aqui 3 = 3, e o resultado terá ordem `2x4`).',
+   p:'Qual a regra de dimensão para somar matrizes e qual a regra para multiplicar matrizes?',
+   r:'Para somar ou subtrair, as duas matrizes devem ter exatamente a mesma ordem. Para multiplicar A por B, o número de colunas de A tem que ser igual ao número de linhas de B.'},
+
+  {id:'EXA-08',m:2,u:'Un. 2 e 3',b:1,
+   q:'Sobre quantificadores lógicos e as Leis de De Morgan na Álgebra Booleana, avalie:\n\nI. A negação da sentença "Toda criança tem de brincar" (quantificador universal) é "Nenhuma criança tem de brincar".\nII. A negação de um quantificador universal (`∀`) deve obrigatoriamente usar um quantificador existencial (`∃`), como "Alguma criança não tem de brincar".\nIII. Pelo Teorema de De Morgan, a negação da conjunção `~(A e B)` equivale a `~A ou ~B`, e a negação da disjunção `~(A ou B)` equivale a `~A e ~B`.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e III, apenas.','II e III, apenas.','II, apenas.','I, II e III.'],a:2,
+   e:'II e III são verdadeiras! I é a pegadinha clássica: NUNCA negue "Todo" com "Nenhum" — negue "Todo" com "Algum... não" (universal <-> existencial). E em De Morgan, negar o parêntese nega cada parte e TROCA E por OU (e OU por E).',
+   p:'Como negar um quantificador universal como "Todo" e o que dizem as Leis de De Morgan?',
+   r:'Nega-se "Todo" usando quantificador existencial, como "Algum não". Em De Morgan, negar "A e B" vira "não A ou não B", e negar "A ou B" vira "não A e não B".'},
+
+  {id:'EXA-09',m:2,u:'Un. 5 (Erro AC2)',b:2,
+   q:'Avalie as asserções sobre conversão de binário para hexadecimal:\n\nI. O número binário `(1111101000)_2` equivale a `3E8` na base hexadecimal.\n\nPORQUE\n\nII. Para converter binário em hexadecimal, separamos os bits em grupos de 4 (nibbles) da direita para a esquerda e substituímos cada nibble pelo símbolo hexadecimal correspondente (`0011=3`, `1110=E`, `1000=8`).\n\nAssinale a opção correta:',
+   o:['As duas asserções são verdadeiras e a segunda justifica a primeira.',
+      'As duas asserções são verdadeiras e a segunda não justifica a primeira.',
+      'A primeira asserção é verdadeira e a segunda é falsa.',
+      'A primeira asserção é falsa e a segunda é verdadeira.',
+      'As duas asserções são falsas.'],a:0,
+   e:'Correta: A! (Reforço do seu erro na AC2 Q7!). Separe da direita para a esquerda em blocos de 4 bits (nibbles): `1000` = 8; `1110` = 14 = E; `11` (completa com zeros: `0011`) = 3 -> `3E8`. A II explica exatamente como se chega à I!',
+   p:'Como converter um número binário para hexadecimal passo a passo?',
+   r:'Separa os bits em grupos de 4, chamados nibbles, da direita para a esquerda, completando com zeros à esquerda se precisar, e troca cada grupo pelo dígito hexadecimal de 0 a F.'},
+
+  {id:'EXA-10',m:2,u:'Un. 6 (Erro AC2)',b:2,
+   q:'Comparando criptografia simétrica e assimétrica, assinale a alternativa CORRETA:',
+   o:['Na criptografia simétrica usam-se duas chaves diferentes (pública e privada), sendo mais lenta que a assimétrica.',
+      'RSA, ElGamal e Diffie-Hellman são algoritmos típicos de criptografia simétrica.',
+      'Na criptografia assimétrica, o mesmo par de chaves serve para todas as pessoas e não existe diferença entre chave pública e privada.',
+      'AES, DES, 3DES e IDEA são algoritmos de criptografia assimétrica baseados em números primos.',
+      'A simétrica usa uma única chave secreta e é mais rápida (ex.: AES, DES, 3DES, IDEA); a assimétrica usa par de chaves pública e privada (ex.: RSA, ElGamal, Diffie-Hellman), sendo mais lenta/cara, porém mais segura e capaz de garantir autenticidade e confidencialidade.'],a:4,
+   e:'Correta: E! (Reforço do seu erro na AC2 Q10!). Na assimétrica, cada participante gera seu próprio par de chaves (pública compartilhada + privada guardada consigo); ela é usada em assinatura digital (autenticidade), confidencialidade, WhatsApp ponta a ponta e blockchain.',
+   p:'Diferencie criptografia simétrica e assimétrica em chaves, velocidade e exemplos de algoritmos.',
+   r:'Simétrica usa uma única chave, é mais rápida e tem algoritmos como AES, DES, 3DES e IDEA. Assimétrica usa par de chaves pública e privada, é mais lenta e segura, com RSA, ElGamal e Diffie-Hellman.'},
+
+  // ================= FUNDAMENTOS DE SISTEMAS DE INFORMAÇÃO (10) =================
+  {id:'SI-01',m:3,u:'Un. 7',b:0,
+   q:'Na Gestão do Conhecimento, os conceitos de Dados, Informação e Conhecimento são interdependentes, mas distintos. Assinale a alternativa CORRETA:',
+   o:['Dados e informações são exatamente sinônimos, ambos representando fatos já interpretados para decisão.',
+      'Dados são fatos brutos sem processamento (matéria-prima); informações são dados organizados e contextualizados com significado; conhecimento é a compreensão e interpretação das informações para tomar decisões e resolver problemas.',
+      'Conhecimento é apenas a coleta bruta de números de vendas antes de qualquer organização.',
+      'Informação é gerada diretamente sem precisar de dados de entrada.',
+      'A visualização em gráficos e BI serve para transformar conhecimento de volta em dados brutos.'],a:1,
+   e:'Correta: B! Escada clássica: Dados (brutos, matéria-prima) -> Processamento/Contexto -> Informação (significado/gráficos) -> Interpretação/Experiência -> Conhecimento (ação e decisão).',
+   p:'Qual a diferença entre dados, informação e conhecimento?',
+   r:'Dados são fatos brutos sem sentido; informação são dados organizados e contextualizados; conhecimento é a compreensão da informação para tomar decisões.'},
+
+  {id:'SI-02',m:3,u:'Un. 7',b:0,
+   q:'Sobre os diferentes tipos de conhecimento nas organizações, avalie as afirmações:\n\nI. O conhecimento tácito é facilmente documentado e replicável em manuais, enquanto o conhecimento explícito baseia-se apenas na intuição e experiência pessoal.\nII. O conhecimento diagnóstico analisa as causas dos fatos descritos, sendo o primeiro passo para identificar problemas como bugs ou erros de usabilidade.\nIII. O conhecimento prático é voltado à aplicação efetiva no mundo real, desenvolvido por treinamento e prática repetida.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','II e III, apenas.','I e III, apenas.','I, II e III.'],a:2,
+   e:'II e III são corretas! I está INVERTIDA (pegadinha clássica de prova): TÁCITO = está na cabeça da pessoa (experiência/intuição, difícil de formalizar); EXPLÍCITO = documentado, compreensível e replicável.',
+   p:'Qual a diferença entre conhecimento tácito, explícito e diagnóstico?',
+   r:'Tácito vem da experiência e intuição pessoal; explícito é documentado e replicável; diagnóstico analisa causas para identificar problemas ou oportunidades.'},
+
+  {id:'SI-03',m:3,u:'Un. 7',b:0,
+   q:'Ainda sobre tipos de conhecimento e vantagem competitiva, avalie:\n\nI. Conhecimento descritivo explica como as coisas são (ex.: perfil demográfico); prescritivo estabelece melhores práticas/recomendações; preditivo ajuda a prever tendências e demanda; estratégico orienta decisões de longo prazo.\nII. O conhecimento gera vantagem competitiva por meio da melhoria da qualidade, inovação de produtos/serviços, personalização para clientes e melhoria de processos internos.\nIII. O exemplo do Carrefour no livro ilustra vantagem competitiva ao usar IA e análise de dados para personalizar recomendações e robôs para automatizar a logística.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','II e III, apenas.','I e III, apenas.','I, II e III.'],a:4,
+   e:'Todas (I, II e III) são verdadeiras! Revisando os 8 tipos de conhecimento da Un. 7: Descritivo, Prescritivo, Estratégico, Diagnóstico, Tácito, Explícito, Prático e Preditivo.',
+   p:'Diferencie conhecimento descritivo, prescritivo, preditivo e estratégico, e diga como geram vantagem competitiva.',
+   r:'Descritivo descreve fatos; prescritivo indica melhores práticas; preditivo prevê demanda; estratégico guia longo prazo. Geram vantagem por qualidade, inovação, personalização e processos eficientes.'},
+
+  {id:'SI-04',m:3,u:'Un. 8',b:0,
+   q:'Sobre o papel da área de Sistemas de Informação e suas grandes áreas de carreira, assinale a alternativa CORRETA:',
+   o:['A área de SI impulsiona a transformação digital com tecnologias como IA, Big Data, IoT e computação em nuvem, oferecendo carreiras interligadas em Desenvolvimento de Software, Banco de Dados, Infraestrutura, Consultoria, Análise de Dados, Segurança da Informação e Gestão de Projetos de TI.',
+      'As grandes áreas de TI atuam sempre de forma isolada, sem necessidade de trabalho conjunto em projetos.',
+      'Big Data refere-se a pequenos arquivos que cabem facilmente em planilhas tradicionais.',
+      'O profissional de Banco de Dados é o único responsável por proteger a rede contra ataques cibernéticos.',
+      'A digitalização dos negócios reduziu a demanda global por profissionais de TI segundo o Fórum Econômico Mundial.'],a:0,
+   e:'Correta: A! O livro destaca que as 7 grandes áreas de SI são interligadas e que a demanda global por profissionais de TI segue em forte crescimento (acelerada pela transformação digital).',
+   p:'Quais são as 4 tecnologias que impulsionam a transformação digital e as grandes áreas de carreira em SI?',
+   r:'Tecnologias: IA, Big Data, IoT e nuvem. Carreiras: desenvolvimento, banco de dados, infraestrutura, consultoria, análise de dados, segurança da informação e gestão de projetos.'},
+
+  {id:'SI-05',m:3,u:'Un. 8',b:0,
+   q:'Sobre as competências do profissional de Sistemas de Informação, avalie as asserções:\n\nI. Além de dominar habilidades técnicas (hard skills) e tecnológicas (tech skills), o profissional de SI precisa desenvolver habilidades socioemocionais, como comunicação eficaz, empatia, trabalho em equipe e pensamento crítico.\n\nPORQUE\n\nII. Enquanto habilidades técnicas são específicas e mensuráveis e habilidades tecnológicas são mais amplas no uso de tecnologias para resolver problemas, as socioemocionais determinam a qualidade da interação com colegas, lideranças e clientes.\n\nAssinale a opção correta:',
+   o:['A asserção I é verdadeira e a II é falsa.','A asserção I é falsa e a II é verdadeira.','As asserções I e II são verdadeiras, mas a II não justifica a I.','As asserções I e II são verdadeiras, e a II é uma justificativa correta da I.','As asserções I e II são falsas.'],a:3,
+   e:'Correta: D! Fique ligado nessa distinção da Un. 8: Hard skills (técnicas) = específicas e mensuráveis (ex: programar em Python); Tech skills (tecnológicas) = mais amplas (usar tecnologias em vários setores); Socioemocionais = interação humana e liderança.',
+   p:'Qual a diferença entre habilidades técnicas, tecnológicas e socioemocionais?',
+   r:'Técnicas ou hard skills são específicas e mensuráveis; tecnológicas são mais amplas para resolver problemas com tecnologia; socioemocionais envolvem comunicação, empatia, equipe e liderança.'},
+
+  {id:'SI-06',m:3,u:'Un. 1',b:1,
+   q:'Em Sistemas de Informação, os termos eficácia, eficiência e efetividade têm significados distintos. Assinale a alternativa CORRETA:',
+   o:['Um processo eficaz é obrigatoriamente eficiente, mas um processo eficiente nem sempre é eficaz.',
+      'Eficácia refere-se a atingir o objetivo esperado ("fazer o certo"); eficiência refere-se a usar o melhor processo possível ("do jeito certo"), logo todo processo eficiente é eficaz, mas nem todo eficaz é eficiente; efetividade refere-se aos resultados reais produzidos.',
+      'Eficiência significa fazer o errado do jeito errado com menor custo.',
+      'Efetividade significa apenas criar um plano no papel, mesmo sem aplicá-lo na prática.',
+      'Eficácia, eficiência e efetividade são sinônimos perfeitos na literatura de SI.'],a:1,
+   e:'Correta: B! Frase de ouro do livro (Un. 1): "um processo eficiente é necessariamente eficaz, mas um processo eficaz não necessariamente é eficiente." E efetividade = impacto/resultado efetivamente alcançado.',
+   p:'Diferencie eficácia, eficiência e efetividade, e diga qual implica qual.',
+   r:'Eficácia é atingir a meta; eficiência é atingir com o melhor processo; efetividade é o resultado real produzido. Todo processo eficiente é eficaz, mas nem todo eficaz é eficiente.'},
+
+  {id:'SI-07',m:3,u:'Un. 2',b:1,
+   q:'Sobre engenharia de requisitos e o Triângulo de Qualidade no desenvolvimento de um SI, avalie:\n\nI. Requisitos funcionais definem as ações/funcionalidades que o sistema deve executar; requisitos não funcionais (de qualidade) definem restrições e atributos como tempo de resposta e plataforma/SO.\nII. Requisitos de usuário são descritos em linguagem natural pelos interessados, enquanto requisitos de sistema são técnicos e detalhados pelos desenvolvedores.\nIII. Pelo Triângulo de Qualidade (Tempo, Custo e Qualidade), é sempre possível priorizar os três simultaneamente sem penalizar nenhum deles.\n\nEstá correto o que se afirma em:',
+   o:['I e II, apenas.','I e III, apenas.','II e III, apenas.','I, apenas.','I, II e III.'],a:0,
+   e:'I e II são verdadeiras. III é FALSA: no Triângulo de Qualidade, apenas DOIS quesitos podem ser escolhidos simultaneamente — o terceiro sempre sofre impacto (ex.: rápido + qualidade = custo alto).',
+   p:'Qual a diferença entre requisito funcional e não funcional, e qual a regra do Triângulo de Qualidade?',
+   r:'Funcional define o que o sistema faz; não funcional define qualidades e restrições como desempenho. No Triângulo Tempo, Custo e Qualidade, só dá para priorizar dois; o terceiro é penalizado.'},
+
+  {id:'SI-08',m:3,u:'Un. 5',b:1,
+   q:'Comparando os frameworks ITIL e COBIT no gerenciamento de TI, avalie:\n\nI. O COBIT foi criado pela ISACA em 1996 com foco em governança e gestão de TI alinhada ao negócio, estruturado em Domínios, Objetivos, Processos e Componentes (com versão atual COBIT 2019 mais ágil).\nII. O ITIL v3 organiza o ciclo de vida de serviços em 5 volumes (Estratégia, Desenho, Transição, Operação e Melhoria Contínua).\nIII. O ITIL 4 (2019) adota abordagem mais holística e centrada no valor, estruturada em 4 dimensões e no conceito de "práticas", integrando metodologias ágeis e DevOps.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','II e III, apenas.','I e III, apenas.','I, II e III.'],a:4,
+   e:'Todas (I, II e III) são verdadeiras! COBIT = governança de TI (ISACA); ITIL = gestão de serviços de TI (CCTA -> Axelos). ITIL v3 = 5 volumes/processos; ITIL 4 = 1 volume principal, 4 dimensões, "práticas" e foco em valor.',
+   p:'Qual o foco principal do COBIT versus o ITIL, e o que mudou do ITIL v3 para o ITIL 4?',
+   r:'COBIT foca em governança de TI; ITIL foca em gestão de serviços de TI. O ITIL v3 tinha 5 volumes focados em processos; o ITIL 4 tem 4 dimensões, usa práticas, foco em valor e integra Ágil e DevOps.'},
+
+  {id:'SI-09',m:3,u:'Un. 6',b:1,
+   q:'Um Plano de Gestão de Segurança da Informação (PGSI) deve seguir normas técnicas e leis aplicáveis. Assinale a associação CORRETA:',
+   o:['PCI DSS: lei brasileira de proteção de dados pessoais; LGPD: padrão internacional para cartões de crédito.',
+      'ISO/IEC 27001: regula apenas acesso a informações públicas governamentais no Brasil.',
+      'ISO/IEC 27001 (requisitos de SGSI) e 27002 (diretrizes/boas práticas); PCI DSS (segurança de cartões de pagamento); LGPD (coleta e tratamento de dados pessoais no Brasil) e Marco Civil da Internet (princípios, direitos e deveres no uso da internet).',
+      'NIST SP 800-53: lei brasileira que define crimes cibernéticos.',
+      'Lei de Acesso à Informação: norma internacional para backup de servidores web.'],a:2,
+   e:'Correta: C! Separe bem: NORMAS = ISO 27001 (requisitos SGSI), ISO 27002 (diretrizes), NIST SP 800-53 (EUA), PCI DSS (cartões). LEIS BRASILEIRAS = LGPD, Marco Civil da Internet, Leis de Crimes Cibernéticos e Lei de Acesso à Informação.',
+   p:'Diferencie as normas ISO 27001, ISO 27002 e PCI DSS, e cite as 4 leis brasileiras do PGSI.',
+   r:'ISO 27001 dá requisitos do SGSI, 27002 dá diretrizes e boas práticas, PCI DSS protege dados de cartões. Leis brasileiras: LGPD, Marco Civil da Internet, Crimes Cibernéticos e Lei de Acesso à Informação.'},
+
+  {id:'SI-10',m:3,u:'Un. 1 (Erros AC1)',b:2,
+   q:'Sobre o papel dos Sistemas de Informação nas decisões empresariais e os tipos de SI, avalie:\n\nI. Os Sistemas de Informação tomam decisões automaticamente pelas empresas e sempre entregam conclusões prontas e definitivas em seus relatórios.\nII. Uma empresa pode possuir computadores (hardware e software) para controlar tarefas e ainda assim não possuir um verdadeiro Sistema de Informação.\nIII. Os Sistemas Especialistas (baseados em conhecimento e IA) são indicados para análises que respondam a questões pontuais e específicas de gestores ou funcionários.\n\nEstá correto o que se afirma em:',
+   o:['I, apenas.','I e II, apenas.','I e III, apenas.','II e III, apenas.','I, II e III.'],a:3,
+   e:'II e III são corretas! (Reforço dos seus 2 erros na AC1 Q2 e Q3!). I é FALSA: o SI fornece informações e indicadores para APOIAR a decisão — quem analisa e toma a decisão são os gestores (pessoas), nunca o sistema sozinho. E questão específica/pontual = Sistemas Especialistas!',
+   p:'Quem toma a decisão numa empresa — o SI ou o gestor? Ter PC garante ter SI? E para que servem Sistemas Especialistas?',
+   r:'Quem decide é o gestor humano, o SI só fornece informações de apoio. Ter computadores não garante ter SI. Sistemas Especialistas usam conhecimento e IA para responder demandas pontuais e específicas.'}
+];
+
+const KEY_PROG = 'sim_af_prog_v2';
+const KEY_EXT  = 'sim_af_extras_v2';
+let prog = JSON.parse(localStorage.getItem(KEY_PROG) || '{}');
+let extras = JSON.parse(localStorage.getItem(KEY_EXT) || '[]');
+let banco = [], lista = [], idx = 0, selTemp = null, playAtiva = false, timerA = null;
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/`([^`]+)`/g,'<code>$1</code>');
+}
+
+function montarBanco() {
+  const mapa = new Map();
+  BASE_Q.forEach(q => mapa.set(q.id, q));
+  extras.forEach(q => mapa.set(q.id, q));
+  banco = Array.from(mapa.values());
+}
+
+function salvar() { localStorage.setItem(KEY_PROG, JSON.stringify(prog)); }
+
+function attResumo() {
+  document.getElementById('banksBar').innerHTML = MATS.map((nome, mi) => {
+    const qtd = banco.filter(q => q.m === mi).length;
+    return `<span class="btag">${nome}: <b>${qtd}/40</b></span>`;
+  }).join('');
+  let c=0, ch=0, e=0;
+  banco.forEach(q => {
+    const p = prog[q.id];
+    if (!p) return;
+    if (p.st === 'certo') c++; else if (p.st === 'chute') ch++; else e++;
+  });
+  const resp = c + ch + e;
+  const pct = resp ? Math.round(((c + ch) / resp) * 100) : 0;
+  document.getElementById('statsBar').innerHTML = `
+    <span class="pill">Feitas: <b>${resp}/${banco.length}</b></span>
+    <span class="pill ok">Certas: <b>${c}</b></span>
+    <span class="pill warn">Chutes: <b>${ch}</b></span>
+    <span class="pill err">Erros: <b>${e}</b></span>
+    <span class="pill">Nota: <b>${pct}%</b></span>`;
+}
+
+function filtrar(manter = false) {
+  const m = Number(document.getElementById('selMat').value);
+  const f = document.getElementById('selFil').value;
+  lista = banco.filter(q => {
+    if (m !== -1 && q.m !== m) return false;
+    const p = prog[q.id];
+    if (f === '0' || f === '1' || f === '2') return q.b === Number(f);
+    if (f === 'PEND') return !p;
+    if (f === 'REV') return p && (p.st === 'erro' || p.st === 'chute');
+    return true;
+  });
+  if (!manter) idx = 0;
+  if (idx >= lista.length) idx = Math.max(0, lista.length - 1);
+  selTemp = null;
+  render();
+}
+
+function metaRep(st) {
+  if (st === 'erro') return {n:5, t:'Repetir 5x: fale em voz alta 2x agora, 1x em 1h, 1x amanhã e 1x antes da prova.'};
+  if (st === 'chute') return {n:3, t:'Repetir 3x (chute/dúvida): fale em voz alta 1x agora, 1x amanhã e 1x antes da prova.'};
+  return {n:1, t:'Repetir 1x: dominada! Só revisão relâmpago na véspera.'};
+}
+
+function ir(i) { idx = i; selTemp = null; render(); }
+
+function render() {
+  attResumo();
+  document.getElementById('qGrid').innerHTML = lista.map((q, i) => {
+    const st = prog[q.id] ? prog[q.id].st : '';
+    return `<button class="q-dot ${st} ${i===idx?'active':''}" onclick="ir(${i})" title="${q.id}">${i+1}</button>`;
+  }).join('');
+
+  const app = document.getElementById('app');
+  if (!lista.length) {
+    app.innerHTML = `<div class="card">Nenhuma questão nesse filtro. Troque o filtro no topo!</div>`;
+    return;
+  }
+  const q = lista[idx], p = prog[q.id], trav = !!p, escAtual = trav ? p.ch : selTemp;
+
+  const optsHtml = q.o.map((txt, i) => {
+    let cls = 'opt';
+    if (trav) {
+      cls += ' locked';
+      if (i === q.a) cls += ' correct';
+      else if (i === p.ch && p.ch !== q.a) cls += ' wrong';
+    } else if (i === escAtual) cls += ' selected';
+    return `<button class="${cls}" ${trav?'disabled':`onclick="sel(${i})"`}><span class="opt-letter">${LETRAS[i]})</span><span>${esc(txt)}</span></button>`;
+  }).join('');
+
+  let fbHtml = '';
+  if (trav) {
+    const mr = metaRep(p.st);
+    const fbCls = p.st === 'certo' ? 'ok' : (p.st === 'chute' ? 'warn' : 'err');
+    const tit = p.st === 'certo' ? '✅ Acertou com segurança!'
+      : p.st === 'chute' ? '⚠️ Acertou, mas marcou dúvida/chute — vamos fixar!'
+      : `❌ Errou! O gabarito certo é a letra ${LETRAS[q.a].toUpperCase()}.`;
+    const reps = p.reps || [];
+    let chks = '';
+    for (let r = 1; r <= mr.n; r++) {
+      chks += `<label><input type="checkbox" ${reps.includes(r)?'checked':''} onchange="togRep('${q.id}',${r})"> ${r}ª rep.</label>`;
+    }
+    fbHtml = `
+      <div class="feedback ${fbCls}">
+        <div class="fb-title">${tit}</div>
+        <div class="exp">${esc(q.e)}</div>
+        <div class="rep-box"><b>🎯 Plano de Repetição:</b> ${mr.t}<div class="rep-checks">${chks}</div></div>
+        <div class="audio-box">
+          <b>🎙️ Áudio (fale em voz alta / ouça no fone com pausa de 4s):</b><br>
+          <b>P:</b> ${esc(q.p)}<br><i>(4 segundos em silêncio para responder)</i><br><b>R:</b> ${esc(q.r)}
+          <div style="margin-top:8px;"><button class="audio-btn" onclick="tocar('${q.id}')">🔊 Ouvir agora (pausa 4s)</button></div>
+        </div>
+      </div>`;
+  }
+
+  const stTag = p ? `<span class="tag status-${p.st}">${p.st==='certo'?'Dominada':p.st==='chute'?'Reforçar (Chute)':'Reforçar (Erro)'}</span>` : '';
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="meta">
+        <span class="tag">${MATS[q.m]}</span>
+        <span class="tag bloco">${q.u} • ${BLOCOS[q.b]}</span>
+        <span class="tag bloco">${q.id} (${idx+1}/${lista.length})</span>
+        ${stTag}
+      </div>
+      <div class="stem">${esc(q.q)}</div>
+      <div class="opts">${optsHtml}</div>
+      <div class="action-bar">
+        ${!trav ? `
+          <label class="chute-lbl"><input type="checkbox" id="chkChute"> Chutei / fiquei em dúvida (repetir 3x)</label>
+          <button class="primary" onclick="confirmar()">Confirmar Resposta</button>
+        ` : `
+          <button onclick="refazer('${q.id}')">↻ Refazer</button>
+          <button class="primary" onclick="prox()">Próxima →</button>
+        `}
+      </div>
+      ${fbHtml}
+      <div class="nav-bar">
+        <button onclick="ant()" ${idx===0?'disabled':''}>← Anterior</button>
+        <span style="color:var(--muted);font-size:0.83rem;">Leia o enunciado e responda em voz alta antes de confirmar!</span>
+        <button onclick="prox()" ${idx===lista.length-1?'disabled':''}>Próxima →</button>
+      </div>
+    </div>`;
+}
+
+function sel(i) { selTemp = i; render(); }
+function confirmar() {
+  if (selTemp === null) { alert('Escolha uma alternativa!'); return; }
+  const q = lista[idx], chute = document.getElementById('chkChute')?.checked || false;
+  const st = selTemp === q.a ? (chute ? 'chute' : 'certo') : 'erro';
+  prog[q.id] = {ch: selTemp, st, reps: []};
+  salvar(); render();
+}
+function refazer(id) { delete prog[id]; salvar(); selTemp = null; render(); }
+function togRep(id, r) {
+  const p = prog[id]; if (!p) return;
+  p.reps = p.reps || [];
+  p.reps = p.reps.includes(r) ? p.reps.filter(x => x !== r) : [...p.reps, r];
+  salvar();
+}
+function ant() { if (idx > 0) { idx--; selTemp = null; render(); } }
+function prox() { if (idx < lista.length - 1) { idx++; selTemp = null; render(); } }
+
+function falar(txt, cb) {
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(txt);
+  u.lang = 'pt-BR'; u.rate = 1.05;
+  if (cb) u.onend = cb;
+  window.speechSynthesis.speak(u);
+}
+function pararAudio() {
+  playAtiva = false; clearTimeout(timerA); window.speechSynthesis.cancel();
+  document.getElementById('audioStatus').style.display = 'none';
+}
+function tocar(id, done) {
+  const q = banco.find(x => x.id === id); if (!q) return;
+  const bar = document.getElementById('audioStatus'), msg = document.getElementById('audioMsg');
+  bar.style.display = 'flex';
+  msg.textContent = `🔊 ${q.id}: ${q.p}`;
+  falar(q.p, () => {
+    let s = 4;
+    msg.textContent = `⏳ Responda em voz alta... (${s}s)`;
+    const tick = () => {
+      s--;
+      if (s > 0) { msg.textContent = `⏳ Responda em voz alta... (${s}s)`; timerA = setTimeout(tick, 1000); }
+      else {
+        msg.textContent = `✅ ${q.r}`;
+        falar('Resposta: ' + q.r, () => {
+          if (done) timerA = setTimeout(done, 1200); else bar.style.display = 'none';
+        });
+      }
+    };
+    timerA = setTimeout(tick, 1000);
+  });
+}
+function ouvirErros() {
+  pararAudio();
+  const m = Number(document.getElementById('selMat').value);
+  const fila = banco.filter(q => (m === -1 || q.m === m) && prog[q.id] && (prog[q.id].st === 'erro' || prog[q.id].st === 'chute'));
+  if (!fila.length) { alert('Nenhum erro ou chute salvo nesse filtro ainda!'); return; }
+  playAtiva = true; let k = 0;
+  const step = () => { if (!playAtiva || k >= fila.length) { pararAudio(); return; } tocar(fila[k].id, () => { k++; step(); }); };
+  step();
+}
+
+function abrirModal() { document.getElementById('modalBg').style.display = 'flex'; }
+function fecharModal() { document.getElementById('modalBg').style.display = 'none'; }
+function importarLote() {
+  try {
+    const arr = JSON.parse(document.getElementById('txtLote').value.trim());
+    if (!Array.isArray(arr) || !arr.length) throw new Error('Cole um array JSON válido.');
+    const mapa = new Map(extras.map(x => [x.id, x]));
+    arr.forEach(x => { if (x.id && x.q && Array.isArray(x.o)) mapa.set(x.id, x); });
+    extras = Array.from(mapa.values());
+    localStorage.setItem(KEY_EXT, JSON.stringify(extras));
+    montarBanco(); fecharModal(); document.getElementById('txtLote').value = '';
+    filtrar(true);
+    alert(`Lote importado! Agora você tem ${banco.length} questões carregadas.`);
+  } catch (err) { alert('Erro ao importar: ' + err.message); }
+}
+
+document.getElementById('selMat').onchange = () => filtrar(false);
+document.getElementById('selFil').onchange = () => filtrar(false);
+document.getElementById('btnMix').onclick = () => {
+  for (let i = lista.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [lista[i],lista[j]]=[lista[j],lista[i]]; }
+  idx = 0; selTemp = null; render();
+};
+document.getElementById('btnPlay').onclick = ouvirErros;
+document.getElementById('btnStop').onclick = pararAudio;
+document.getElementById('btnAdd').onclick = abrirModal;
+document.getElementById('btnReset').onclick = () => { if (confirm('Zerar todo o progresso?')) { prog = {}; salvar(); filtrar(false); } };
+
+montarBanco();
+filtrar(false);
+</script>
+</body>
+</html>
